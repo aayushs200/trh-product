@@ -25,10 +25,37 @@ class MongoData(APIView):
     def get(self, request):
         try:
             db = Util.createConnection()
-            # coln = db['live_data']
-            coln = db['dummy_data']
+            dummy_data = db['dummy_data']
+            
+            exchange = request.GET.get('exchange')
+            sector = request.GET.get('sector')
+            industry = request.GET.get('industry')
+            index = request.GET.get('index')
+            page_num = int(request.GET.get('page_num'))
+            page_size = int(request.GET.get('page_size'))
+            print("\nexchange : ",exchange, "\nsector : ",sector,"\nindustry : ",industry, "\nindex : ",index, "\npage_num : ",page_num,type(page_num), "\npage_size : ",page_size,type(page_size))
+            resp = []
 
-            return Response({"msg": "Data Retrieved", 'data': []})
+            if exchange and sector and industry and index:
+                # resp = dummy_data.find({"exchange":exchange, "sector": sector, "industry":industry, "index":index}).skip(page_num).limit(page_size)
+                # resp = Util.make_response(resp)
+                # print("resp : ",len(resp), resp[0:2])
+                resp = []
+            elif exchange and sector and industry:
+                # resp = dummy_data.find({"exchange":exchange, "sector": sector, "industry":industry})
+                resp = dummy_data.find({"exchange":exchange, "sector": sector, "industry":industry}).skip(page_num).limit(page_size)
+                resp = Util.make_response(resp)
+                print("resp : ",len(resp), resp)
+            elif exchange and sector:
+                resp = dummy_data.find({"exchange":exchange, "sector": sector}).skip(page_num).limit(page_size)
+                resp = Util.make_response(resp)
+                print("resp : ",len(resp), resp[0:2])
+            elif exchange:
+                resp = dummy_data.find({"exchange":exchange}).skip(page_num).limit(page_size)
+                resp = Util.make_response(resp)
+                print("resp : ",len(resp), resp)
+                
+            return Response({"msg": "Data Retrieved", 'data': resp})
         except Exception as e:
             print(f"Error ===> {e}")
             return Response({"msg": "FAILED, {e}"})
