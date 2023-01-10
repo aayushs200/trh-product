@@ -19,6 +19,7 @@ from pymongo import InsertOne, MongoClient
 #         "industry":""
 #     }
 
+res_g = {"msg": 'SUCCESS'}
 
 class MongoData(APIView):
 
@@ -36,13 +37,17 @@ class MongoData(APIView):
             print("\nexchange : ",exchange, "\nsector : ",sector,"\nindustry : ",industry, "\nindex : ",index, "\npage_num : ",page_num,type(page_num), "\npage_size : ",page_size,type(page_size))
             resp = []
 
+
+
             if exchange and sector and industry and index:
                 # resp = dummy_data.find({"exchange":exchange, "sector": sector, "industry":industry, "index":index}).skip(page_num).limit(page_size)
                 # resp = Util.make_response(resp)
                 # print("resp : ",len(resp), resp[0:2])
                 resp = []
             elif exchange and sector and industry:
-                # resp = dummy_data.find({"exchange":exchange, "sector": sector, "industry":industry})
+                resp = dummy_data.find({"exchange":exchange, "sector": sector, "industry":industry})
+                resp = Util.make_response(resp)
+                print("len(resp) : ",len(resp))
                 resp = dummy_data.find({"exchange":exchange, "sector": sector, "industry":industry}).skip(page_num).limit(page_size)
                 resp = Util.make_response(resp)
                 print("resp : ",len(resp), resp)
@@ -59,6 +64,44 @@ class MongoData(APIView):
         except Exception as e:
             print(f"Error ===> {e}")
             return Response({"msg": "FAILED, {e}"})
+
+
+class DropdownApi(APIView):
+    def get(self, request):
+        try:
+            print('This is a dropdown API')
+            db = Util.createConnection()
+            dummy_data_col = db['dummy_data']
+            distinct_data = []
+
+            if request.GET.get('exchange'):
+                print('got exchange {}'.format(request.GET.get('exchange')))
+                distinct_data  = dummy_data_col.find({"exchange":request.GET.get('exchange')}).distinct("sector")
+                distinct_data = Util.make_response(distinct_data)
+                print("distinct_data : ",distinct_data)
+                return Response({"msg": 'SUCCESS, sectors returned.', "data":[]})
+
+            elif request.GET.get('sector'):
+                print('got sector {}'.format(request.GET.get('sector')))
+                distinct_data  = dummy_data_col.find({"sector":request.GET.get('sector')}).distinct("industry")
+                distinct_data = Util.make_response(distinct_data)
+                print("distinct_data : ",distinct_data)
+                return Response({"msg": 'SUCCESS, industries returned.', "data":distinct_data})
+
+            elif request.GET.get('industry'):
+                print('got industry {}'.format(request.GET.get('industry')))
+                distinct_data  = dummy_data_col.find({"industry":request.GET.get('industry')}).distinct("stock")
+                distinct_data = Util.make_response(distinct_data)
+                print("distinct_data : ",distinct_data)
+                return Response({"msg": 'SUCCESS, industries returned.', "data":distinct_data})
+                
+            else:
+                raise NotImplementedError(f"unsupported method")
+
+            return Response({"msg": 'SUCCESS', "data":distinct_data})
+        except Exception as e:
+            print("ERROR ==> ", e)
+            return Response({"msg": f'FAILED, {e}', "data":[]})
 
 
 class CreateData(APIView):
